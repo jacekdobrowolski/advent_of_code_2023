@@ -11,24 +11,25 @@ import (
 
 func main() {
 	file, err := os.Open("input")
-	defer file.Close()
-
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer file.Close()
+
+	result_sum := CallibrationSum(file)
+	fmt.Printf("Result: %d\n", result_sum)
+}
+
+func CallibrationSum(file *os.File) int {
 	scanner := bufio.NewScanner(file)
 	var result_sum int
 	for scanner.Scan() {
-		fmt.Print(scanner.Text())
-		number := findNumber(scanner.Text())
-		result_sum += number
-		fmt.Println(number)
+		result_sum += findNumber(scanner.Text())
 	}
-
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Result: %d\n", result_sum)
+	return result_sum
 }
 
 type callibrationNumber struct {
@@ -78,7 +79,6 @@ func findNumber(word string) int {
 	sort.Slice(numbers, func(i, j int) bool {
 		return numbers[i].index < numbers[j].index
 	})
-	fmt.Println(numbers)
 	firstNumber := numbers[0].number
 	lastnumber := numbers[len(numbers)-1].number
 	return firstNumber*10 + lastnumber
