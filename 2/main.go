@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+type gameBag map[string]uint64
+
 func main() {
 	file, err := os.Open("input")
 	if err != nil {
@@ -21,7 +23,7 @@ func main() {
 }
 
 func possibleGamesIDSum(file *os.File) uint64 {
-	bag := map[string]uint64{
+	bag := gameBag{
 		"red":   12,
 		"green": 13,
 		"blue":  14}
@@ -37,13 +39,17 @@ func possibleGamesIDSum(file *os.File) uint64 {
 	return result_sum
 }
 
-func possibleGameID(line string, bag map[string]uint64) uint64 {
+func possibleGameID(line string, bag gameBag) uint64 {
 	line_split_colon := strings.Split(line, ":")
-	gameID, err := strconv.ParseUint(line_split_colon[0][5:], 10, 64)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// gameID, err := strconv.ParseUint(line_split_colon[0][5:], 10, 64)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	rounds := strings.Split(line_split_colon[1], ";")
+	minimumBag := gameBag{
+		"red":   0,
+		"green": 0,
+		"blue":  0}
 	for _, round := range rounds {
 		handful := strings.Split(round, ",")
 		for _, cubes := range handful {
@@ -53,12 +59,20 @@ func possibleGameID(line string, bag map[string]uint64) uint64 {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if cubesInBag, ok := bag[cubeColor]; ok {
+			if cubesInBag, ok := minimumBag[cubeColor]; ok {
 				if cubeCount > cubesInBag {
-					return 0
+					minimumBag[cubeColor] = cubeCount
 				}
 			}
 		}
 	}
-	return gameID
+	return powerOfGame(minimumBag)
+}
+
+func powerOfGame(bag gameBag) uint64 {
+	var power uint64 = 1
+	for _, count := range bag {
+		power *= count
+	}
+	return power
 }

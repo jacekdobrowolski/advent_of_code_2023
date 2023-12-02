@@ -6,15 +6,15 @@ import (
 )
 
 func TestPossibleGamesIDSum(t *testing.T) {
-	file, err := os.Open("input")
+	file, err := os.Open("test_input")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer file.Close()
 
 	result_sum := possibleGamesIDSum(file)
-	if result_sum != 2176 {
-		t.Fatalf("expected %d, got: %d", 2176, result_sum)
+	if result_sum != 2286 {
+		t.Fatalf("expected %d, got: %d", 2286, result_sum)
 	}
 }
 
