@@ -13,8 +13,8 @@ func TestEnginePartNumSum(t *testing.T) {
 	}
 
 	result_sum := enginePartNumSum(file)
-	if result_sum != 4361 {
-		t.Fatalf("expected %d, got: %d", 4361, result_sum)
+	if result_sum != 467835 {
+		t.Fatalf("expected %d, got: %d", 467835, result_sum)
 	}
 }
 
