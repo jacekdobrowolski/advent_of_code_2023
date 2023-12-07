@@ -23,18 +23,28 @@ func main() {
 func scratchCardWinningsSum(file *os.File) uint64 {
 	scanner := bufio.NewScanner(file)
 	var result_sum uint64
+	scratchCards := make(map[uint64]uint64)
 	for scanner.Scan() {
-		result_sum += scratchCardWinnings(scanner.Text())
+		scratchCardWinnings(scanner.Text(), &scratchCards)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+	for _, cardCount := range scratchCards {
+		result_sum += cardCount
+	}
+	fmt.Println(scratchCards)
 	return result_sum
 }
 
-func scratchCardWinnings(line string) uint64 {
-	var points uint64 = 0
+func scratchCardWinnings(line string, scratchCards *map[uint64]uint64) {
 	card := strings.Split(line, ":")
+	cardNum, err := strconv.ParseUint(strings.TrimLeft(card[0][5:], " "), 10, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	(*scratchCards)[cardNum]++
+
 	winningNumsAndElfsNums := strings.Split(card[1], "|")
 	winningNumsStr, ElfsNumsStr := winningNumsAndElfsNums[0], winningNumsAndElfsNums[1]
 	winningNums := make([]uint64, 0, 5)
@@ -48,6 +58,7 @@ func scratchCardWinnings(line string) uint64 {
 		}
 		winningNums = append(winningNums, num)
 	}
+	var cardsWon uint64 = 0
 	for _, elfsNum := range strings.Split(ElfsNumsStr, " ") {
 		if elfsNum == "" {
 			continue
@@ -56,15 +67,15 @@ func scratchCardWinnings(line string) uint64 {
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		for _, winningNum := range winningNums {
 			if elfsNum == winningNum {
-				if points == 0 {
-					points = 1
-				} else {
-					points *= 2
-				}
+				cardsWon++
 			}
 		}
 	}
-	return points
+	var i uint64
+	for i = 1; i <= cardsWon; i++ {
+		(*scratchCards)[cardNum+i] += (*scratchCards)[cardNum]
+	}
 }

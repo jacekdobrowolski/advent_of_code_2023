@@ -13,8 +13,8 @@ func TestScratchCardWinningsSum(t *testing.T) {
 	defer file.Close()
 
 	result_sum := scratchCardWinningsSum(file)
-	if result_sum != 13 {
-		t.Fatalf("expected %d, got: %d", 13, result_sum)
+	if result_sum != 30 {
+		t.Fatalf("expected %d, got: %d", 30, result_sum)
 	}
 }
 
