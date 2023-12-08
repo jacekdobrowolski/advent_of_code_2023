@@ -19,7 +19,7 @@ func TestLowestLocation(t *testing.T) {
 }
 
 func BenchmarkLowestLocation(b *testing.B) {
-	file, err := os.ReadFile("test_input")
+	file, err := os.ReadFile("input")
 	if err != nil {
 		log.Fatal(err)
 	}
