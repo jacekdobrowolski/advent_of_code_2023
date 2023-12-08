@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -33,15 +34,14 @@ func lowestLocation(fileBytes []byte) uint64 {
 	fileStr := string(fileBytes)
 	seedsAndMaps := strings.Split(fileStr, "\n\n")
 	seedPairs := parseSeedPairs(seedsAndMaps[0])
-	maps := make([][]Mapping, 7)
-	for i, offsetMappingsStr := range seedsAndMaps[1:] {
-		maps[i] = *parseMappings(offsetMappingsStr)
-	}
+	maps := *parseMaps(&seedsAndMaps)
 
 	var wg errgroup.Group
-	wg.SetLimit(24)
+	wg.SetLimit(runtime.NumCPU())
+
 	results := make(chan uint64)
 	minLocationChan := make(chan uint64)
+	defer close(minLocationChan)
 
 	go func() {
 		minLocation := ^uint64(0)
@@ -58,28 +58,37 @@ func lowestLocation(fileBytes []byte) uint64 {
 			}
 		}
 	}()
+
 	for i := 0; i < len(seedPairs); i += 2 {
 		var j uint64
-		// seedsToProcess += int(seedOffset)
 		seedStart, seedOffset := seedPairs[i], seedPairs[i+1]
+
 		var batchSize uint64 = 125_000_000
 		batches := uint64(math.Ceil(float64(seedOffset) / float64(batchSize)))
+
 		for j = 0; j < batches; j++ {
 			if (j+1)*batchSize > seedOffset {
 				batchSize = seedOffset - j*batchSize
 			}
-			process(seedStart+j*batchSize, batchSize, maps, &wg, results)
+			wg.Go(batchRoutine(seedStart+j*batchSize, batchSize, maps, &wg, results))
 		}
 	}
 	wg.Wait()
 	close(results)
-	defer close(minLocationChan)
+
 	return <-minLocationChan
-	// return minLocation
 }
 
-func process(seedStart uint64, seedOffset uint64, maps [][]Mapping, wg *errgroup.Group, results chan<- uint64) {
-	wg.Go(func() error {
+func parseMaps(seedsAndMaps *[]string) *[][]Mapping {
+	maps := make([][]Mapping, 7)
+	for i, offsetMappingsStr := range (*seedsAndMaps)[1:] {
+		maps[i] = *parseMappings(offsetMappingsStr)
+	}
+	return &maps
+}
+
+func batchRoutine(seedStart uint64, seedOffset uint64, maps [][]Mapping, wg *errgroup.Group, results chan<- uint64) func() error {
+	return func() error {
 		minLocation := ^uint64(0)
 		var j uint64
 		for j = 0; j < seedOffset; j++ {
@@ -93,7 +102,7 @@ func process(seedStart uint64, seedOffset uint64, maps [][]Mapping, wg *errgroup
 		}
 		results <- minLocation
 		return nil
-	})
+	}
 }
 
 func parseSeedPairs(s string) []uint64 {
