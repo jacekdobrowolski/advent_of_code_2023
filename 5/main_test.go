@@ -13,13 +13,13 @@ func TestLowestLocation(t *testing.T) {
 	}
 
 	result_sum := lowestLocation(file)
-	if result_sum != 35 {
-		t.Fatalf("expected %d, got: %d", 35, result_sum)
+	if result_sum != 46 {
+		t.Fatalf("expected %d, got: %d", 46, result_sum)
 	}
 }
 
-func BenchmarklowestLocation(b *testing.B) {
-	file, err := os.ReadFile("input")
+func BenchmarkLowestLocation(b *testing.B) {
+	file, err := os.ReadFile("test_input")
 	if err != nil {
 		log.Fatal(err)
 	}

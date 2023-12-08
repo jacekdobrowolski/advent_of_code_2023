@@ -1,0 +1,4 @@
+golang.org/x/perf v0.0.0-20231127181059-b53752263861 h1:oWUgm6RG0ZUKQeX7wxjnX+TFCrXDSheBtpiy5vpUdZg=
+golang.org/x/perf v0.0.0-20231127181059-b53752263861/go.mod h1:sKqUfjZtdM78wIFCYFnmu2FhhanvRUbp67Zgmj3TZPM=
+golang.org/x/sync v0.5.0 h1:60k92dhOjHxJkrqnwsfl8KuaHbn/5dl0lUPUklKo3qE=
+golang.org/x/sync v0.5.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=

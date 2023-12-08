@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -29,36 +31,69 @@ type Mapping struct {
 func lowestLocation(fileBytes []byte) uint64 {
 	fileStr := string(fileBytes)
 	seedsAndMaps := strings.Split(fileStr, "\n\n")
-	seeds := parseSeeds(seedsAndMaps[0])
+	seedPairs := parseSeedPairs(seedsAndMaps[0])
 	maps := make([][]Mapping, 7)
 	for i, offsetMappingsStr := range seedsAndMaps[1:] {
 		maps[i] = *parseMappings(offsetMappingsStr)
 	}
 
-	minLocation := ^uint64(0)
-	for _, seed := range seeds {
-		x := seed
-		for _, mappings := range maps {
-			x = resolveMapping(x, mappings)
+	var wg errgroup.Group
+	wg.SetLimit(24)
+	results := make(chan uint64)
+	minLocationChan := make(chan uint64)
+	seedsToProcess := 0
+	go func() {
+		minLocation := ^uint64(0)
+		for {
+			location, more := <-results
+			if more {
+
+				if location < minLocation {
+					minLocation = location
+				}
+			} else {
+				minLocationChan <- minLocation
+				break
+			}
 		}
-		if x < minLocation {
-			minLocation = x
-		}
+	}()
+	for i := 0; i < len(seedPairs); i += 2 {
+		var j uint64
+		seedStart, seedOffset := seedPairs[i], seedPairs[i+1]
+		seedsToProcess += int(seedOffset)
+		maps := maps
+		wg.Go(func() error {
+			minLocation := ^uint64(0)
+			for j = 0; j < seedOffset; j++ {
+				x := seedStart + j
+				for _, mappings := range maps {
+					x = resolveMapping(x, &mappings)
+				}
+				if x < minLocation {
+					minLocation = x
+				}
+			}
+			results <- minLocation
+			return nil
+		})
 	}
-	return minLocation
+	wg.Wait()
+	close(results)
+	defer close(minLocationChan)
+	return <-minLocationChan
 }
 
-func parseSeeds(s string) []uint64 {
+func parseSeedPairs(s string) []uint64 {
 	seedsStr := strings.SplitAfter(s, " ")[1:]
-	seeds := make([]uint64, len(seedsStr))
+	seedPairs := make([]uint64, len(seedsStr))
 	for i, seedStr := range seedsStr {
 		seed, err := strconv.ParseUint(strings.Trim(seedStr, " "), 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
-		seeds[i] = seed
+		seedPairs[i] = seed
 	}
-	return seeds
+	return seedPairs
 }
 
 func parseMappings(offsetMap string) *[]Mapping {
@@ -89,8 +124,8 @@ func parseMappings(offsetMap string) *[]Mapping {
 	return &mappings
 }
 
-func resolveMapping(x uint64, mappings []Mapping) uint64 {
-	for _, mapping := range mappings {
+func resolveMapping(x uint64, mappings *[]Mapping) uint64 {
+	for _, mapping := range *mappings {
 		if x >= mapping.source && x < mapping.source+mapping.offset {
 			return (x + mapping.destination) - mapping.source
 		}
