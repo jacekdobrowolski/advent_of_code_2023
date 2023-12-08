@@ -13,8 +13,8 @@ func TestWinningMargin(t *testing.T) {
 	}
 
 	result_sum := winningMargin(file)
-	if result_sum != 288 {
-		t.Fatalf("expected %d, got: %d", 288, result_sum)
+	if result_sum != 71503 {
+		t.Fatalf("expected %d, got: %d", 71503, result_sum)
 	}
 }
 

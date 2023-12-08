@@ -21,24 +21,34 @@ func main() {
 func winningMargin(fileBytes []byte) int {
 	fileStr := string(fileBytes)
 	timeAndDistance := strings.Split(fileStr, "\n")
-	raceTimes := parseColumns(timeAndDistance[0])
-	winningDistances := parseColumns(timeAndDistance[1])
+	raceTime := parseBadKerning(timeAndDistance[0])
+	winningDistance := parseBadKerning(timeAndDistance[1])
 	result := 1
-	for raceIdx := 0; raceIdx < len(raceTimes); raceIdx++ {
 
-		fmt.Printf("Race: %d, time: %d, recordDistance: %d\n", raceIdx, raceTimes[raceIdx], winningDistances[raceIdx])
-		winningMargin := 0
-		for buttonPressTime := 1; buttonPressTime < raceTimes[raceIdx]; buttonPressTime++ {
-			speed := buttonPressTime
-			travelTime := raceTimes[raceIdx] - buttonPressTime
-			distance := speed * travelTime
-			if distance > winningDistances[raceIdx] {
-				winningMargin++
-				fmt.Printf("Winning posible for press time %d with distance %d\n", buttonPressTime, distance)
-			}
+	fmt.Printf("time: %d, recordDistance: %d\n", raceTime, winningDistance)
+	var minPressTime int
+	for buttonPressTime := 1; buttonPressTime < raceTime; buttonPressTime++ {
+		speed := buttonPressTime
+		travelTime := raceTime - buttonPressTime
+		distance := speed * travelTime
+		if distance > winningDistance {
+			minPressTime = buttonPressTime
+			fmt.Printf("Minimum press time to win %d\n", buttonPressTime)
+			break
 		}
-		result *= winningMargin
 	}
+	var maxPressTime int
+	for buttonPressTime := raceTime; buttonPressTime > 1; buttonPressTime-- {
+		speed := buttonPressTime
+		travelTime := raceTime - buttonPressTime
+		distance := speed * travelTime
+		if distance > winningDistance {
+			maxPressTime = buttonPressTime
+			fmt.Printf("Maximum press time to win %d\n", buttonPressTime)
+			break
+		}
+	}
+	result *= maxPressTime - minPressTime + 1
 
 	return result
 }
@@ -59,4 +69,14 @@ func parseColumns(columnsLine string) []int {
 		columns = append(columns, column)
 	}
 	return columns
+}
+
+func parseBadKerning(line string) int {
+	numbers := strings.SplitAfter(line, ":")[1]
+	numberWithoutSpaces := strings.Replace(numbers, " ", "", -1)
+	number, err := strconv.Atoi(numberWithoutSpaces)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return number
 }
