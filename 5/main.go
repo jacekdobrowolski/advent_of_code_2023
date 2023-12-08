@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"slices"
 	"strconv"
@@ -41,7 +42,7 @@ func lowestLocation(fileBytes []byte) uint64 {
 	wg.SetLimit(24)
 	results := make(chan uint64)
 	minLocationChan := make(chan uint64)
-	seedsToProcess := 0
+
 	go func() {
 		minLocation := ^uint64(0)
 		for {
@@ -59,28 +60,40 @@ func lowestLocation(fileBytes []byte) uint64 {
 	}()
 	for i := 0; i < len(seedPairs); i += 2 {
 		var j uint64
+		// seedsToProcess += int(seedOffset)
 		seedStart, seedOffset := seedPairs[i], seedPairs[i+1]
-		seedsToProcess += int(seedOffset)
-		maps := maps
-		wg.Go(func() error {
-			minLocation := ^uint64(0)
-			for j = 0; j < seedOffset; j++ {
-				x := seedStart + j
-				for _, mappings := range maps {
-					x = resolveMapping(x, &mappings)
-				}
-				if x < minLocation {
-					minLocation = x
-				}
+		var batchSize uint64 = 125_000_000
+		batches := uint64(math.Ceil(float64(seedOffset) / float64(batchSize)))
+		for j = 0; j < batches; j++ {
+			if (j+1)*batchSize > seedOffset {
+				batchSize = seedOffset - j*batchSize
 			}
-			results <- minLocation
-			return nil
-		})
+			process(seedStart+j*batchSize, batchSize, maps, &wg, results)
+		}
 	}
 	wg.Wait()
 	close(results)
 	defer close(minLocationChan)
 	return <-minLocationChan
+	// return minLocation
+}
+
+func process(seedStart uint64, seedOffset uint64, maps [][]Mapping, wg *errgroup.Group, results chan<- uint64) {
+	wg.Go(func() error {
+		minLocation := ^uint64(0)
+		var j uint64
+		for j = 0; j < seedOffset; j++ {
+			x := seedStart + j
+			for _, mappings := range maps {
+				x = resolveMapping(x, &mappings)
+			}
+			if x < minLocation {
+				minLocation = x
+			}
+		}
+		results <- minLocation
+		return nil
+	})
 }
 
 func parseSeedPairs(s string) []uint64 {
